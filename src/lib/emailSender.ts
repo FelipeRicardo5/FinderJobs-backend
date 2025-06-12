@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
-import { scrapRemoteOK } from './puppeteer';
+import { scrapWeWorkRemotely } from './puppeteer';
 
 dotenv.config();
 
@@ -40,7 +40,7 @@ function formatarEmailHTML(vagas: any[]) {
 }
 
 export async function enviarEmailComVagas() {
-  const vagas = await scrapRemoteOK();
+  const vagas = await scrapWeWorkRemotely();
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,

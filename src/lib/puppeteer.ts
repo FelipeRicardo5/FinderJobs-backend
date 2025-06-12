@@ -1,29 +1,30 @@
 import puppeteer from 'puppeteer';
 import { obterInsightDaVaga } from './groqAI';
 
-export async function scrapRemoteOK() {
+export async function scrapWeWorkRemotely() {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
-  await page.goto('https://remoteok.com', { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('[data-offset="2"]');
+  await page.goto('https://weworkremotely.com/remote-jobs', { waitUntil: 'domcontentloaded' });
 
-  const vagas = await page.$$eval('tr.job', (rows) => {
-    return rows.map((el) => {
-      const titulo = el.querySelector('h2')?.textContent?.trim() ?? '';
-      const empresa = el.querySelector('.companyLink h3')?.textContent?.trim() ?? '';
-      const linkRelativo = el.getAttribute('data-href') ?? '';
-      const link = `https://remoteok.com${linkRelativo}`;
-      const tags = Array.from(el.querySelectorAll('.tags .tag')).map((tag) =>
+  await page.waitForSelector('.jobs');
+
+  const vagas = await page.$$eval('.jobs section ul li:not(.view-all)', (items) =>
+    items.map((el) => {
+      const linkEl = el.querySelector('a');
+      const link = linkEl ? `https://weworkremotely.com${linkEl.getAttribute('href')}` : '';
+      const empresa = el.querySelector('.company')?.textContent?.trim() ?? '';
+      const titulo = el.querySelector('.title')?.textContent?.trim() ?? '';
+      const tags = Array.from(el.querySelectorAll('.region.company')).map((tag) =>
         tag.textContent?.trim() ?? ''
       );
       return { titulo, empresa, link, tags, descricao: '', insight: '' };
-    });
-  });
+    })
+  );
 
   for (const vaga of vagas.slice(0, 5)) {
     try {
       await page.goto(vaga.link, { waitUntil: 'domcontentloaded' });
-      const descricao = await page.$eval('div.description', (el) => el.textContent?.trim() ?? '');
+      const descricao = await page.$eval('.listing-container', (el) => el.textContent?.trim() ?? '');
       vaga.descricao = descricao;
       vaga.insight = await obterInsightDaVaga(vaga);
     } catch (error) {
